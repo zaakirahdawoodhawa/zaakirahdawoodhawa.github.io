@@ -412,9 +412,10 @@
     var track = m.querySelector(".marquee-track");
     var dir = parseFloat(m.getAttribute("data-speed")) || 1;
     // Base infinite drift — direction is baked into the from/to values.
+    // Faster on small screens so the full list passes by quickly.
     var loop = gsap.to(track, {
       xPercent: dir > 0 ? -50 : 0,
-      duration: 28,
+      duration: window.innerWidth < 700 ? 14 : 28,
       ease: "none",
       repeat: -1,
       modifiers: {
