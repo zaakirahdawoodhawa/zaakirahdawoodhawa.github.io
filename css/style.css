@@ -673,7 +673,24 @@ main { position: relative; z-index: 1; }
 /* ============ TOOLBOX ============ */
 .toolbox { padding: var(--space-section) 0; overflow: hidden; }
 .marquee { overflow: hidden; white-space: nowrap; padding: 0.6rem 0; }
-.marquee-track { display: inline-flex; align-items: center; will-change: transform; }
+.marquee-par { will-change: transform; }
+/* Auto-drift is a pure CSS animation: compositor-driven, reliable on mobile,
+   and independent of JS/CDN. Parallax is applied to .marquee-par by JS. */
+.marquee-track {
+  display: inline-flex; align-items: center; will-change: transform;
+  animation: marquee-drift var(--marquee-dur, 30s) linear infinite;
+}
+.marquee-reverse .marquee-track { animation-direction: reverse; }
+@keyframes marquee-drift {
+  from { transform: translateX(0); }
+  to   { transform: translateX(-50%); }
+}
+@media (max-width: 700px) {
+  .marquee-track { --marquee-dur: 14s; }
+}
+@media (hover: hover) and (pointer: fine) {
+  .marquee:hover .marquee-track { animation-play-state: paused; }
+}
 .marquee-copy { display: inline-flex; align-items: center; gap: 2.2rem; padding-right: 2.2rem; }
 .marquee span {
   font-family: var(--font-serif); font-weight: 350;
@@ -807,10 +824,12 @@ main { position: relative; z-index: 1; }
 .no-motion .work-hint { display: none; }
 /* Marquees: wrap into visible rows when they can't drift */
 .no-motion .marquee { white-space: normal; }
+.no-motion .marquee-par { transform: none !important; }
 .no-motion .marquee-track {
   display: flex; flex-wrap: wrap; gap: 0.4rem 1.6rem;
   width: 100%; padding: 0 var(--pad-x);
   transform: none !important;
+  animation: none;
 }
 .no-motion .marquee-copy { display: contents; }
 .no-motion .marquee-copy-dup { display: none; }
@@ -844,10 +863,12 @@ main { position: relative; z-index: 1; }
   .card { scroll-snap-align: start; }
   .work-hint { display: none; }
   .marquee { white-space: normal; }
+  .marquee-par { transform: none !important; }
   .marquee-track {
     display: flex; flex-wrap: wrap; gap: 0.4rem 1.6rem;
     width: 100%; padding: 0 var(--pad-x);
     transform: none !important;
+    animation: none;
   }
   .marquee-copy { display: contents; }
   .marquee-copy-dup { display: none; }

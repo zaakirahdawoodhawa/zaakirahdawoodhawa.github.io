@@ -407,48 +407,26 @@
     scrollTrigger: { trigger: ".values-grid", start: "top 80%" }
   });
 
-  /* ---------- Marquees drift with scroll ---------- */
-  gsap.utils.toArray(".marquee").forEach(function (m) {
-    var track = m.querySelector(".marquee-track");
-    var dir = parseFloat(m.getAttribute("data-speed")) || 1;
-    // Base infinite drift — direction is baked into the from/to values.
-    // Faster on small screens so the full list passes by quickly.
-    var loop = gsap.to(track, {
-      xPercent: dir > 0 ? -50 : 0,
-      duration: window.innerWidth < 700 ? 14 : 28,
-      ease: "none",
-      repeat: -1,
-      modifiers: {
-        xPercent: function (x) {
-          var v = parseFloat(x);
-          return gsap.utils.wrap(-50, 0, v) + "%";
+  /* ---------- Marquee parallax ----------
+     Auto-drift lives in CSS (marquee-drift keyframes on .marquee-track,
+     hover-pause via :hover). Here we only add the parallax layer: as the
+     toolbox scrolls through the viewport, the two rows slide in opposite
+     directions at different rates. Leftward-only offsets so the strip's
+     left seam is never exposed. */
+  gsap.utils.toArray(".marquee .marquee-par").forEach(function (par, i) {
+    var forward = i % 2 === 0;
+    gsap.fromTo(par,
+      { xPercent: forward ? 0 : -12 },
+      {
+        xPercent: forward ? -12 : 0,
+        ease: "none",
+        scrollTrigger: {
+          trigger: ".toolbox",
+          start: "top bottom",
+          end: "bottom top",
+          scrub: 0.4
         }
-      }
-    });
-    if (dir < 0) gsap.set(track, { xPercent: -50 });
-    // Scroll velocity nudges playback speed (always a positive magnitude —
-    // a negative timeScale would rewind the loop to 0 and freeze it),
-    // then settles back to 1x.
-    var speedTween;
-    ScrollTrigger.create({
-      trigger: m,
-      start: "top bottom",
-      end: "bottom top",
-      onUpdate: function (self) {
-        var v = 1 + Math.min(Math.abs(self.getVelocity()) / 900, 2.5);
-        if (speedTween) speedTween.kill();
-        speedTween = gsap.timeline()
-          .to(loop, { timeScale: v, duration: 0.3 })
-          .to(loop, { timeScale: 1, duration: 1, ease: "power2.out" }, "+=0.4");
-      }
-    });
-    // WCAG 2.2.2: hovering pauses the strip — but only on devices that truly
-    // hover. On touch, pointerenter fires on tap and the matching leave may
-    // never come (iOS), which would freeze the marquee permanently.
-    if (window.matchMedia("(hover: hover) and (pointer: fine)").matches) {
-      m.addEventListener("pointerenter", function () { loop.pause(); });
-      m.addEventListener("pointerleave", function () { loop.play(); });
-    }
+      });
   });
 
   /* ---------- AI chat typing ---------- */
