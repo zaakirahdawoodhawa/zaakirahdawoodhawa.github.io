@@ -32,6 +32,10 @@
       .work-track { width: auto !important; overflow-x: auto !important; }
       .hero-roles-rotator .role { display: none; }
       .hero-roles-rotator .role.is-active { display: inline; }
+      .marquee { white-space: normal; }
+      .marquee-track { display: flex !important; flex-wrap: wrap; gap: 0.4rem 1.6rem; width: 100%; padding: 0 var(--pad-x); }
+      .marquee-copy { display: contents; }
+      .marquee-copy-dup { display: none; }
     </style>
   </noscript>
 </head>
@@ -348,14 +352,14 @@
       </ul>
       <div class="marquee" data-speed="1" aria-hidden="true">
         <div class="marquee-track">
-          <span>Adobe Creative Suite</span><i>✦</i><span>Figma</span><i>✦</i><span>Canva</span><i>✦</i><span>DaVinci Resolve</span><i>✦</i><span>CapCut</span><i>✦</i><span>WordPress</span><i>✦</i><span>Jira</span><i>✦</i><span>Notion</span><i>✦</i><span>Trello</span><i>✦</i><span>Google Suite</span><i>✦</i>
-          <span>Adobe Creative Suite</span><i>✦</i><span>Figma</span><i>✦</i><span>Canva</span><i>✦</i><span>DaVinci Resolve</span><i>✦</i><span>CapCut</span><i>✦</i><span>WordPress</span><i>✦</i><span>Jira</span><i>✦</i><span>Notion</span><i>✦</i><span>Trello</span><i>✦</i><span>Google Suite</span><i>✦</i>
+          <span class="marquee-copy"><span>Adobe Creative Suite</span><i>✦</i><span>Figma</span><i>✦</i><span>Canva</span><i>✦</i><span>DaVinci Resolve</span><i>✦</i><span>CapCut</span><i>✦</i><span>WordPress</span><i>✦</i><span>Jira</span><i>✦</i><span>Notion</span><i>✦</i><span>Trello</span><i>✦</i><span>Google Suite</span><i>✦</i></span>
+          <span class="marquee-copy marquee-copy-dup"><span>Adobe Creative Suite</span><i>✦</i><span>Figma</span><i>✦</i><span>Canva</span><i>✦</i><span>DaVinci Resolve</span><i>✦</i><span>CapCut</span><i>✦</i><span>WordPress</span><i>✦</i><span>Jira</span><i>✦</i><span>Notion</span><i>✦</i><span>Trello</span><i>✦</i><span>Google Suite</span><i>✦</i></span>
         </div>
       </div>
       <div class="marquee marquee-reverse" data-speed="-1" aria-hidden="true">
         <div class="marquee-track">
-          <span>Strategy</span><i>✧</i><span>Copywriting</span><i>✧</i><span>Brand design</span><i>✧</i><span>Events</span><i>✧</i><span>Email &amp; SMS</span><i>✧</i><span>Social</span><i>✧</i><span>Video</span><i>✧</i><span>Process design</span><i>✧</i><span>Stakeholder wrangling</span><i>✧</i><span>AI workflows</span><i>✧</i>
-          <span>Strategy</span><i>✧</i><span>Copywriting</span><i>✧</i><span>Brand design</span><i>✧</i><span>Events</span><i>✧</i><span>Email &amp; SMS</span><i>✧</i><span>Social</span><i>✧</i><span>Video</span><i>✧</i><span>Process design</span><i>✧</i><span>Stakeholder wrangling</span><i>✧</i><span>AI workflows</span><i>✧</i>
+          <span class="marquee-copy"><span>Strategy</span><i>✧</i><span>Copywriting</span><i>✧</i><span>Brand design</span><i>✧</i><span>Events</span><i>✧</i><span>Email &amp; SMS</span><i>✧</i><span>Social</span><i>✧</i><span>Video</span><i>✧</i><span>Process design</span><i>✧</i><span>Stakeholder wrangling</span><i>✧</i><span>AI workflows</span><i>✧</i></span>
+          <span class="marquee-copy marquee-copy-dup"><span>Strategy</span><i>✧</i><span>Copywriting</span><i>✧</i><span>Brand design</span><i>✧</i><span>Events</span><i>✧</i><span>Email &amp; SMS</span><i>✧</i><span>Social</span><i>✧</i><span>Video</span><i>✧</i><span>Process design</span><i>✧</i><span>Stakeholder wrangling</span><i>✧</i><span>AI workflows</span><i>✧</i></span>
         </div>
       </div>
     </section>

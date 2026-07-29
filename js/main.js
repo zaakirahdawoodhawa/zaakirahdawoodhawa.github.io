@@ -441,9 +441,13 @@
           .to(loop, { timeScale: 1, duration: 1, ease: "power2.out" }, "+=0.4");
       }
     });
-    // WCAG 2.2.2: hovering or focusing the strip pauses it.
-    m.addEventListener("pointerenter", function () { loop.pause(); });
-    m.addEventListener("pointerleave", function () { loop.play(); });
+    // WCAG 2.2.2: hovering pauses the strip — but only on devices that truly
+    // hover. On touch, pointerenter fires on tap and the matching leave may
+    // never come (iOS), which would freeze the marquee permanently.
+    if (window.matchMedia("(hover: hover) and (pointer: fine)").matches) {
+      m.addEventListener("pointerenter", function () { loop.pause(); });
+      m.addEventListener("pointerleave", function () { loop.play(); });
+    }
   });
 
   /* ---------- AI chat typing ---------- */

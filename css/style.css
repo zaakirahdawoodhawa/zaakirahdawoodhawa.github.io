@@ -673,7 +673,8 @@ main { position: relative; z-index: 1; }
 /* ============ TOOLBOX ============ */
 .toolbox { padding: var(--space-section) 0; overflow: hidden; }
 .marquee { overflow: hidden; white-space: nowrap; padding: 0.6rem 0; }
-.marquee-track { display: inline-flex; align-items: center; gap: 2.2rem; padding-right: 2.2rem; will-change: transform; }
+.marquee-track { display: inline-flex; align-items: center; will-change: transform; }
+.marquee-copy { display: inline-flex; align-items: center; gap: 2.2rem; padding-right: 2.2rem; }
 .marquee span {
   font-family: var(--font-serif); font-weight: 350;
   font-size: clamp(1.6rem, 3.4vw, 2.6rem);
@@ -804,6 +805,15 @@ main { position: relative; z-index: 1; }
 }
 .no-motion .card { scroll-snap-align: start; }
 .no-motion .work-hint { display: none; }
+/* Marquees: wrap into visible rows when they can't drift */
+.no-motion .marquee { white-space: normal; }
+.no-motion .marquee-track {
+  display: flex; flex-wrap: wrap; gap: 0.4rem 1.6rem;
+  width: 100%; padding: 0 var(--pad-x);
+  transform: none !important;
+}
+.no-motion .marquee-copy { display: contents; }
+.no-motion .marquee-copy-dup { display: none; }
 .no-motion { scroll-behavior: auto; }
 .no-motion .nav {
   background: rgba(247, 244, 239, 0.85);
@@ -833,4 +843,12 @@ main { position: relative; z-index: 1; }
   }
   .card { scroll-snap-align: start; }
   .work-hint { display: none; }
+  .marquee { white-space: normal; }
+  .marquee-track {
+    display: flex; flex-wrap: wrap; gap: 0.4rem 1.6rem;
+    width: 100%; padding: 0 var(--pad-x);
+    transform: none !important;
+  }
+  .marquee-copy { display: contents; }
+  .marquee-copy-dup { display: none; }
 }
