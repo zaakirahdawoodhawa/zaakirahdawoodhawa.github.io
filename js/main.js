@@ -134,8 +134,7 @@
     document.querySelectorAll("[data-count]").forEach(function (el) {
       el.textContent = el.getAttribute("data-count");
     });
-    var tp = document.getElementById("typedPrompt");
-    if (tp) tp.textContent = "Draft 3 subject lines for the QPlant launch email — confident, human, under 50 characters.";
+    // (typedPrompt text ships in the HTML — nothing to fill in here)
     // Verification hook: ?static=1&y=3000 shifts content up for screenshots
     // (headless scrolled viewports don't rasterize, so translate instead).
     var yParam = window.location.search.match(/[?&]y=(\d+)/);
@@ -331,7 +330,7 @@
   }
 
   gsap.utils.toArray(".chapter").forEach(function (ch) {
-    var inner = ch.querySelectorAll(".chapter-meta, .chapter-title, .chapter-role, .chapter-text, .chapter-quote");
+    var inner = ch.querySelectorAll(".chapter-meta, .chapter-title, .chapter-role, .chapter-text, .chapter-skills, .chapter-quote");
     gsap.fromTo(inner, { opacity: 0, y: 36 }, {
       opacity: 1, y: 0, duration: 0.9, ease: "power3.out", stagger: 0.09,
       scrollTrigger: { trigger: ch, start: "top 74%" }
@@ -430,7 +429,7 @@
   });
 
   /* ---------- AI chat typing ---------- */
-  var promptText = "Draft 3 subject lines for the QPlant launch email — confident, human, under 50 characters.";
+  var promptText = "My QPlant launch concept: “Estimates you can defend.” Push on it — give me 3 sharper variants to A/B test against my line.";
   var typedEl = document.getElementById("typedPrompt");
   var aiReply = document.getElementById("aiReply");
   var humanNote = document.getElementById("humanNote");
