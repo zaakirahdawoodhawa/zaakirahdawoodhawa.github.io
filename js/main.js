@@ -458,6 +458,412 @@
     });
   }
 
+  /* ---------- Chaos, sorted — an interactive parable -----------------
+     Phase 0/1: the viewer tries to gather the chaos by hand. It leaks.
+     Phase 2:   a rose light — Zaakirah — glides in. She sorts particles
+                into the Z wherever she passes, and the viewer's touch
+                suddenly works too: everything it brushes settles home.
+     Phase 3:   the Z holds, breathing, a step higher after every break.
+     Three.js lazy-loads near the section; any failure and the section
+     simply stands on its own. */
+  var chaosStarted = false;
+  function buildChaos() {
+    var wrap = document.getElementById("globe");
+    var T = window.THREE;
+    if (!wrap || !T) return;
+
+    // Sample the Z from an offscreen canvas
+    var cs = document.createElement("canvas");
+    cs.width = 320; cs.height = 320;
+    var cx2d = cs.getContext("2d");
+    if (!cx2d) return;
+    cx2d.fillStyle = "#fff";
+    cx2d.font = "italic 700 300px Georgia, 'Times New Roman', serif";
+    cx2d.textAlign = "center"; cx2d.textBaseline = "middle";
+    cx2d.fillText("Z", 160, 175);
+    var img = cx2d.getImageData(0, 0, 320, 320).data;
+    var targets = [];
+    for (var yy = 0; yy < 320; yy += 3) {
+      for (var xx = 0; xx < 320; xx += 3) {
+        if (img[(yy * 320 + xx) * 4 + 3] > 128) {
+          targets.push([(xx - 160) / 38, -(yy - 160) / 38, (Math.random() - 0.5) * 0.7]);
+        }
+      }
+    }
+    var N = targets.length;
+    if (!N) return;
+
+    var size = wrap.clientWidth;
+    var scene = new T.Scene();
+    var camera = new T.PerspectiveCamera(38, 1, 0.1, 100);
+    camera.position.z = 7.4;
+    var renderer;
+    try {
+      renderer = new T.WebGLRenderer({ antialias: true, alpha: true });
+    } catch (e) { return; }
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+    renderer.setSize(size, size);
+    wrap.appendChild(renderer.domElement);
+    wrap.parentNode.classList.add("is-live");
+    var progressEl = wrap.parentNode.querySelector(".globe-progress-fill");
+    var captionEl = wrap.parentNode.querySelector(".globe-caption");
+    function setCaption(text) {
+      if (!captionEl) return;
+      gsap.to(captionEl, { opacity: 0, duration: 0.35, onComplete: function () {
+        captionEl.textContent = text;
+        gsap.to(captionEl, { opacity: 1, duration: 0.5 });
+      }});
+    }
+
+    var group = new T.Group();
+    scene.add(group);
+    var targetGroupY = -0.1;
+    group.position.y = targetGroupY;
+
+    // Particles: cream majority with pastel confetti
+    var palette = [
+      [0.97, 0.96, 0.94], [0.97, 0.96, 0.94],
+      [0.87, 0.61, 0.71], [0.89, 0.78, 0.49],
+      [0.66, 0.79, 0.67], [0.62, 0.73, 0.85]
+    ];
+    var pos = new Float32Array(N * 3);
+    var col = new Float32Array(N * 3);
+    var vel = new Float32Array(N * 3);
+    var phase = new Float32Array(N);
+    var awake = new Uint8Array(N); // 0 = adrift in chaos, 1 = being sorted
+    for (var i = 0; i < N; i++) {
+      var r = 3.2 + Math.random() * 2.2;
+      var a = Math.random() * Math.PI * 2;
+      var b = (Math.random() - 0.5) * Math.PI;
+      pos[i * 3] = Math.cos(a) * Math.cos(b) * r;
+      pos[i * 3 + 1] = Math.sin(b) * r * 0.8;
+      pos[i * 3 + 2] = Math.sin(a) * Math.cos(b) * r * 0.5;
+      var c = palette[(Math.random() * palette.length) | 0];
+      col[i * 3] = c[0]; col[i * 3 + 1] = c[1]; col[i * 3 + 2] = c[2];
+      phase[i] = Math.random() * Math.PI * 2;
+    }
+    var geo = new T.BufferGeometry();
+    geo.setAttribute("position", new T.BufferAttribute(pos, 3));
+    geo.setAttribute("color", new T.BufferAttribute(col, 3));
+    group.add(new T.Points(geo, new T.PointsMaterial({
+      vertexColors: true, size: 0.055, transparent: true, opacity: 0.95, sizeAttenuation: true
+    })));
+
+    // The objective, always visible: a ghost outline of the Z to rebuild
+    var ghostPos = new Float32Array(N * 3);
+    for (var g = 0; g < N; g++) {
+      ghostPos[g * 3] = targets[g][0];
+      ghostPos[g * 3 + 1] = targets[g][1];
+      ghostPos[g * 3 + 2] = targets[g][2];
+    }
+    var ghostGeo = new T.BufferGeometry();
+    ghostGeo.setAttribute("position", new T.BufferAttribute(ghostPos, 3));
+    group.add(new T.Points(ghostGeo, new T.PointsMaterial({
+      color: 0xF7F4EF, size: 0.034, transparent: true, opacity: 0.32, sizeAttenuation: true
+    })));
+
+    // Mending threads — visible only for particles being sorted
+    var threadPos = new Float32Array(N * 6);
+    var threadGeo = new T.BufferGeometry();
+    threadGeo.setAttribute("position", new T.BufferAttribute(threadPos, 3));
+    group.add(new T.LineSegments(threadGeo, new T.LineBasicMaterial({
+      color: 0xF7F4EF, transparent: true, opacity: 0.13, depthWrite: false
+    })));
+
+    // Zaakirah: a rose light with a soft halo, hidden until she arrives
+    var orb = new T.Group();
+    orb.add(new T.Mesh(new T.SphereGeometry(0.09, 16, 16),
+      new T.MeshBasicMaterial({ color: 0xDE9BB4 })));
+    orb.add(new T.Mesh(new T.SphereGeometry(0.24, 16, 16),
+      new T.MeshBasicMaterial({ color: 0xDE9BB4, transparent: true, opacity: 0.18 })));
+    orb.visible = false;
+    orb.position.set(-4.8, 3.4, 0.5);
+    group.add(orb);
+    var orbGoal = new T.Vector3(0, 0, 0);
+    var orbVel = new T.Vector3(0, 0, 0);
+    var perch = new T.Vector3(2.7, 2.1, 0.5); // the dot on the signature
+    var perched = false;
+
+    // Her trail — a fading rose ribbon that makes her path legible
+    var TRAIL = 40;
+    var trailPos = new Float32Array(TRAIL * 3);
+    var trailGeo = new T.BufferGeometry();
+    trailGeo.setAttribute("position", new T.BufferAttribute(trailPos, 3));
+    var trail = new T.Line(trailGeo, new T.LineBasicMaterial({
+      color: 0xDE9BB4, transparent: true, opacity: 0.35, depthWrite: false
+    }));
+    trail.visible = false;
+    group.add(trail);
+
+    // Heat: particles flash bright the moment they're sorted
+    var heat = new Float32Array(N);
+    var baseCol = new Float32Array(col);
+
+    // Pointer in formation-plane coordinates
+    var visH = 2 * Math.tan((38 / 2) * Math.PI / 180) * camera.position.z;
+    var ptrX = 999, ptrY = 999, ptrOn = false, ptrDown = false;
+    var cv = renderer.domElement;
+    function toPlane(e) {
+      var rect = cv.getBoundingClientRect();
+      ptrX = ((e.clientX - rect.left) / rect.width * 2 - 1) * (visH / 2);
+      ptrY = (1 - (e.clientY - rect.top) / rect.height * 2) * (visH / 2) - group.position.y;
+    }
+    var downX = 0, downY = 0, downT = 0;
+    cv.addEventListener("pointermove", function (e) { ptrOn = true; toPlane(e); }, { passive: true });
+    cv.addEventListener("pointerdown", function (e) {
+      ptrOn = true; ptrDown = true; toPlane(e);
+      downX = e.clientX; downY = e.clientY; downT = performance.now();
+      cv.setPointerCapture && cv.setPointerCapture(e.pointerId);
+    }, { passive: true });
+    cv.addEventListener("pointerup", function (e) {
+      ptrDown = false;
+      var moved = Math.abs(e.clientX - downX) + Math.abs(e.clientY - downY);
+      if (act >= 3 && performance.now() - downT < 350 && moved < 10) burst();
+    });
+    cv.addEventListener("pointercancel", function () { ptrDown = false; });
+    cv.addEventListener("pointerleave", function () { ptrOn = false; ptrDown = false; ptrX = 999; ptrY = 999; });
+
+    // The story clock
+    var act = 0;            // 0-1 alone, 2 she's here, 3 sorted & holding
+    var effortMs = 0;       // how long the viewer has genuinely tried
+    var watchMs = 0;        // how long the section has been watched
+    var arrivedOnce = false, sortedOnce = false;
+
+    function arrive() {
+      if (arrivedOnce) return;
+      arrivedOnce = true;
+      act = 2;
+      orb.visible = true;
+      trail.visible = true;
+      for (var tr = 0; tr < TRAIL; tr++) {
+        trailPos[tr * 3] = orb.position.x;
+        trailPos[tr * 3 + 1] = orb.position.y;
+        trailPos[tr * 3 + 2] = orb.position.z;
+      }
+      setCaption("hard alone, isn’t it? here’s zaakirah.");
+      gsap.delayedCall(3.2, function () {
+        if (act === 2) setCaption("feel the difference — everything you touch settles now.");
+      });
+    }
+
+    function burst() {
+      act = 2;
+      for (var i = 0; i < N; i++) {
+        var i3 = i * 3;
+        var dx = pos[i3] - ptrX, dy = pos[i3 + 1] - ptrY;
+        var d2 = dx * dx + dy * dy;
+        var f = 0.4 / (1 + d2 * 0.5);
+        vel[i3] += dx * f + (Math.random() - 0.5) * 0.22;
+        vel[i3 + 1] += dy * f + (Math.random() - 0.5) * 0.22;
+        vel[i3 + 2] += (Math.random() - 0.5) * 0.18;
+      }
+      gsap.to(group.position, { y: targetGroupY - 0.07, duration: 0.3, ease: "power2.out" });
+    }
+
+    // Render only while the section is on screen
+    var active = false;
+    ScrollTrigger.create({
+      trigger: ".contact", start: "top bottom", end: "bottom top",
+      onToggle: function (self) { active = self.isActive; }
+    });
+
+    var t = 0, frame = 0;
+    gsap.ticker.add(function (time, delta) {
+      if (!active) return;
+      var dms = Math.min(delta, 50);
+      t += dms * 0.001;
+      frame++;
+
+      // Story pacing: struggle first, then she arrives
+      if (act < 2) {
+        watchMs += dms;
+        if (ptrDown && ptrOn) { effortMs += dms; act = 1; }
+        if (effortMs > 5500 || watchMs > 10000) arrive();
+      }
+
+      // She flies with intent: steering physics toward the nearest work,
+      // and when the sorting is done, a perch at the Z's signature corner.
+      if (act >= 2) {
+        if (frame % 24 === 0 || orb.position.distanceTo(orbGoal) < 0.6) {
+          var bestD = Infinity, bestI = -1;
+          for (var k = 0; k < N; k++) {
+            if (!awake[k]) {
+              var gdx = pos[k * 3] - orb.position.x, gdy = pos[k * 3 + 1] - orb.position.y;
+              var gd = gdx * gdx + gdy * gdy;
+              if (gd < bestD) { bestD = gd; bestI = k; }
+            }
+          }
+          if (bestI >= 0) {
+            perched = false;
+            orbGoal.set(pos[bestI * 3], pos[bestI * 3 + 1], pos[bestI * 3 + 2] * 0.5);
+          } else {
+            perched = true;
+          }
+        }
+        if (perched) {
+          orbGoal.copy(perch);
+          orbGoal.y += Math.sin(t * 1.6) * 0.1;
+        }
+        // Steer: accelerate toward the goal, capped speed — swooping arcs
+        var steer = new T.Vector3().subVectors(orbGoal, orb.position);
+        var dist = steer.length();
+        if (dist > 0.001) {
+          steer.normalize().multiplyScalar(0.006);
+          orbVel.add(steer);
+          orbVel.clampLength(0, perched ? Math.min(0.03, dist * 0.08) : 0.062);
+          orb.position.add(orbVel);
+        }
+        // Trail: shift the ribbon, head at her current position
+        for (var tr = TRAIL - 1; tr > 0; tr--) {
+          trailPos[tr * 3] = trailPos[(tr - 1) * 3];
+          trailPos[tr * 3 + 1] = trailPos[(tr - 1) * 3 + 1];
+          trailPos[tr * 3 + 2] = trailPos[(tr - 1) * 3 + 2];
+        }
+        trailPos[0] = orb.position.x; trailPos[1] = orb.position.y; trailPos[2] = orb.position.z;
+        trailGeo.attributes.position.needsUpdate = true;
+      }
+
+      var i3, i6, dx, dy, d2, settled = 0;
+      for (var i = 0; i < N; i++) {
+        i3 = i * 3; i6 = i * 6;
+        var tx = targets[i][0] + Math.sin(t * 1.4 + phase[i]) * 0.035;
+        var ty = targets[i][1] + Math.cos(t * 1.1 + phase[i]) * 0.035;
+        var tz = targets[i][2];
+
+        if (awake[i]) {
+          // Without her, fixes don't hold: solo-sorted pieces crumble
+          // loose after a few seconds. Once she's here, everything sticks.
+          if (act < 2 && Math.random() < 0.004) {
+            awake[i] = 0; heat[i] = 0;
+            col[i3] = baseCol[i3]; col[i3 + 1] = baseCol[i3 + 1]; col[i3 + 2] = baseCol[i3 + 2];
+            vel[i3] += (Math.random() - 0.5) * 0.12;
+            vel[i3 + 1] += (Math.random() - 0.5) * 0.12;
+            vel[i3 + 2] += (Math.random() - 0.5) * 0.06;
+          }
+        }
+        if (awake[i]) {
+          // Being sorted: spring home
+          vel[i3] += (tx - pos[i3]) * 0.016;
+          vel[i3 + 1] += (ty - pos[i3 + 1]) * 0.016;
+          vel[i3 + 2] += (tz - pos[i3 + 2]) * 0.016;
+        } else {
+          // Adrift: wander, loosely contained
+          vel[i3] += (Math.random() - 0.5) * 0.014 - pos[i3] * 0.0012;
+          vel[i3 + 1] += (Math.random() - 0.5) * 0.014 - pos[i3 + 1] * 0.0012;
+          vel[i3 + 2] += (Math.random() - 0.5) * 0.010 - pos[i3 + 2] * 0.0015;
+        }
+
+        // The viewer's hand
+        if (ptrOn) {
+          dx = ptrX - pos[i3]; dy = ptrY - pos[i3 + 1];
+          d2 = dx * dx + dy * dy;
+          if (act < 2) {
+            // Alone: gather pieces and carry them onto the outline. Only
+            // the few whose homes are right there lock in — honest work,
+            // but slow. The pull is leaky; strays drift off again.
+            if (ptrDown && d2 < 2.25) {
+              vel[i3] += dx * 0.045 + (Math.random() - 0.5) * 0.05;
+              vel[i3 + 1] += dy * 0.045 + (Math.random() - 0.5) * 0.05;
+              if (d2 < 0.49) {
+                var hx = targets[i][0] - ptrX, hy = targets[i][1] - ptrY;
+                if (hx * hx + hy * hy < 0.2) { awake[i] = 1; heat[i] = 1; }
+              }
+            }
+          } else if (act === 2) {
+            // Together: whatever the viewer touches settles home
+            if (d2 < 1.44 && !awake[i]) { awake[i] = 1; heat[i] = 1; }
+          } else if (d2 < 1.44 && d2 > 0.0001) {
+            // Holding: a playful stir
+            var fs = (1.44 - d2) / 1.44 * 0.09 / Math.sqrt(d2);
+            vel[i3] -= dx * fs;
+            vel[i3 + 1] -= dy * fs;
+          }
+        }
+
+        // Her sorting sweep — touched pieces flash and fly home
+        if (act >= 2 && !awake[i]) {
+          dx = orb.position.x - pos[i3]; dy = orb.position.y - pos[i3 + 1];
+          if (dx * dx + dy * dy < 1.2) {
+            awake[i] = 1;
+            heat[i] = 1;
+            vel[i3 + 2] += (Math.random() - 0.5) * 0.05;
+          }
+        }
+
+        // Heat flash: sorted pieces glow toward white, then cool back
+        if (heat[i] > 0.01) {
+          var h = heat[i];
+          col[i3] = baseCol[i3] + (1 - baseCol[i3]) * h;
+          col[i3 + 1] = baseCol[i3 + 1] + (1 - baseCol[i3 + 1]) * h;
+          col[i3 + 2] = baseCol[i3 + 2] + (1 - baseCol[i3 + 2]) * h;
+          heat[i] *= 0.94;
+          if (heat[i] <= 0.01) {
+            col[i3] = baseCol[i3]; col[i3 + 1] = baseCol[i3 + 1]; col[i3 + 2] = baseCol[i3 + 2];
+          }
+        }
+
+        var damp = awake[i] ? 0.88 : 0.95;
+        vel[i3] *= damp; vel[i3 + 1] *= damp; vel[i3 + 2] *= damp;
+        pos[i3] += vel[i3]; pos[i3 + 1] += vel[i3 + 1]; pos[i3 + 2] += vel[i3 + 2];
+
+        // Threads only while a sorted particle is in flight
+        dx = tx - pos[i3]; dy = ty - pos[i3 + 1];
+        d2 = dx * dx + dy * dy;
+        if (awake[i] && d2 > 0.05) {
+          threadPos[i6] = pos[i3]; threadPos[i6 + 1] = pos[i3 + 1]; threadPos[i6 + 2] = pos[i3 + 2];
+          threadPos[i6 + 3] = tx; threadPos[i6 + 4] = ty; threadPos[i6 + 5] = tz;
+        } else {
+          if (awake[i] && d2 <= 0.05) settled++;
+          threadPos[i6] = threadPos[i6 + 3] = pos[i3];
+          threadPos[i6 + 1] = threadPos[i6 + 4] = pos[i3 + 1];
+          threadPos[i6 + 2] = threadPos[i6 + 5] = pos[i3 + 2];
+        }
+      }
+      geo.attributes.position.needsUpdate = true;
+      geo.attributes.color.needsUpdate = true;
+      threadGeo.attributes.position.needsUpdate = true;
+
+      // The objective meter
+      if (progressEl && frame % 10 === 0) {
+        progressEl.style.width = Math.round(settled / N * 100) + "%";
+      }
+
+      // Sorted? The whole structure lifts — a step higher every time.
+      if (act === 2 && frame % 12 === 0 && settled / N > 0.96) {
+        act = 3;
+        targetGroupY = Math.min(targetGroupY + 0.1, 0.2);
+        gsap.to(group.position, { y: targetGroupY, duration: 1.4, ease: "back.out(1.5)" });
+        if (!sortedOnce) {
+          sortedOnce = true;
+          setCaption("chaos, sorted. let’s raise the bar together.");
+        }
+      }
+
+      group.rotation.y = Math.sin(t * 0.35) * 0.14;
+      group.rotation.x = Math.cos(t * 0.28) * 0.06;
+      renderer.render(scene, camera);
+    });
+
+    window.addEventListener("resize", function () {
+      var s = wrap.clientWidth;
+      renderer.setSize(s, s);
+    });
+  }
+
+  ScrollTrigger.create({
+    trigger: ".contact",
+    start: "top bottom+=600",
+    once: true,
+    onEnter: function () {
+      if (chaosStarted || !window.WebGLRenderingContext) return;
+      chaosStarted = true;
+      var s = document.createElement("script");
+      s.src = "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js";
+      s.onload = function () { try { buildChaos(); } catch (e) { /* section stands on its own */ } };
+      document.head.appendChild(s);
+    }
+  });
+
   /* ---------- Contact title + inner reveal ---------- */
   gsap.fromTo(".contact-text, .contact-mail, .contact-meta", { opacity: 0, y: 30 }, {
     opacity: 1, y: 0, duration: 0.9, ease: "power3.out", stagger: 0.12,

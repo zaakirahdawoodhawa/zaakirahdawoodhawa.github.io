@@ -750,6 +750,41 @@ main { position: relative; z-index: 1; }
   from { transform: scale(1); opacity: 0.75; }
   to   { transform: scale(1.15); opacity: 1; }
 }
+/* Interactive globe — chapter five's set piece */
+.globe-wrap {
+  position: absolute; top: 50%; right: 3vw; transform: translateY(-50%);
+  width: min(44vw, 560px); z-index: 1;
+}
+.globe { width: 100%; aspect-ratio: 1; }
+.globe canvas { touch-action: pan-y; cursor: grab; }
+.globe canvas:active { cursor: grabbing; }
+.globe-progress {
+  height: 2px; margin: 0.2rem 12% 0;
+  background: rgba(247, 244, 239, 0.12); border-radius: 999px;
+  overflow: hidden;
+  opacity: 0; transition: opacity 0.8s;
+}
+.globe-wrap.is-live .globe-progress { opacity: 1; }
+.globe-progress-fill {
+  height: 100%; width: 0%;
+  background: linear-gradient(90deg, var(--accent), var(--butter));
+  border-radius: 999px;
+  transition: width 0.4s ease-out;
+}
+.globe-caption {
+  text-align: center; margin-top: 0.5rem;
+  font-size: 0.72rem; letter-spacing: 0.2em; text-transform: uppercase;
+  color: rgba(247, 244, 239, 0.5);
+  opacity: 0; transition: opacity 0.8s;
+}
+.globe-wrap.is-live .globe-caption { opacity: 1; }
+@media (max-width: 1000px) {
+  .globe-wrap {
+    position: relative; top: auto; right: auto; transform: none;
+    width: min(78vw, 380px); margin: 0 auto;
+  }
+}
+
 .contact-inner {
   min-height: 78vh;
   display: flex; flex-direction: column; align-items: flex-start; justify-content: center;
@@ -792,6 +827,25 @@ main { position: relative; z-index: 1; }
 .footer-note { font-style: italic; font-family: var(--font-serif); }
 .footer a { transition: color 0.3s; }
 .footer a:hover { color: var(--cream); }
+
+/* ============ chapters: two-column editorial layout on wide screens ============ */
+@media (min-width: 1100px) {
+  .chapter-body {
+    display: grid;
+    grid-template-columns: minmax(0, 60ch) minmax(260px, 1fr);
+    column-gap: clamp(3rem, 6vw, 7rem);
+  }
+  .chapter-title, .chapter-role { grid-column: 1 / -1; }
+  .chapter-text { grid-column: 1; }
+  .chapter-skills { grid-column: 1; }
+  .chapter-quote {
+    grid-column: 2; grid-row: 3 / span 2;
+    align-self: center; justify-self: start;
+    margin-top: 0;
+    font-size: clamp(1.4rem, 1.7vw, 1.8rem);
+    max-width: 22ch;
+  }
+}
 
 /* ============ responsive ============ */
 @media (max-width: 1000px) {
